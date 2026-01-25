@@ -115,12 +115,22 @@ eventSchema.pre('save', function (next) {
   }
 
   // Normalize date to ISO format (YYYY-MM-DD)
-  if (this.isModified('date') || !this.date) {
-    const dateObj = new Date(this.date)
-    if (isNaN(dateObj.getTime())) {
-      return next(new Error('Invalid date format'))
+  if (this.isModified('date')) {
+    // Skip if already in ISO format
+    const isoDateRegex = /^\d{4}-\d{2}-\d{2}$/
+    if (isoDateRegex.test(this.date)) {
+      // Validate it's a real date
+      const dateObj = new Date(this.date + 'T00:00:00Z')
+      if (isNaN(dateObj.getTime())) {
+        return next(new Error('Invalid date format'))
+      }
+    } else {
+      const dateObj = new Date(this.date)
+      if (isNaN(dateObj.getTime())) {
+        return next(new Error('Invalid date format'))
+      }
+      this.date = dateObj.toISOString().split('T')[0]
     }
-    this.date = dateObj.toISOString().split('T')[0]
   }
 
   // Normalize time format (HH:MM or HH:MM:SS)
